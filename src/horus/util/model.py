@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file is part of the Horus Project
+from enum import Enum
 
 __author__ = 'Jesús Arroyo Torrens <jesus.arroyo@bq.com>'
 __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.\
@@ -7,9 +8,18 @@ __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.\
 __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.html'
 
 import os
-
+from itertools import islice
+from scipy.spatial import Delaunay
 import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from horus.util.processes import NormalEstimation, PoissonReconstruction
+
 np.seterr(all='ignore')
+
+
+class ModelType(Enum):
+    PointCloud = 0
+    Mesh = 1
 
 
 class Model(object):
@@ -17,9 +27,13 @@ class Model(object):
     Each object has a Mesh and a 3x3 transformation matrix to rotate/scale the object.
     """
 
-    def __init__(self, origin_filename, is_point_cloud=False):
+    def __init__(self, origin_filename, on_type_changed=None):
         self._origin_filename = origin_filename
-        self._is_point_cloud = is_point_cloud
+        self._model_type = ModelType.Mesh
+        if on_type_changed is not None:
+            self.on_type_changed_callbacks = [on_type_changed]
+        else:
+            self.on_type_changed_callbacks = []
 
         if origin_filename is None:
             self._name = 'None'
@@ -40,9 +54,15 @@ class Model(object):
         self._mesh = Mesh(self)
         return self._mesh
 
+    def on_type_changed(self, callback):
+        if type(callback) is not list:
+            self.on_type_changed_callbacks.append(callback)
+        elif type(callback) is list:
+            self.on_type_changed_callbacks += callback
+
     def _post_process_after_load(self):
         if len(self._mesh.vertexes) > 0:
-            if not self._is_point_cloud:
+            if self._model_type == ModelType.Mesh:
                 self._mesh._calculate_normals()
 
             self._min = np.array([np.inf, np.inf, np.inf], np.float64)
@@ -62,7 +82,7 @@ class Model(object):
             self._boundary_circle_size = max(self._boundary_circle_size, boundary_circle_size)
 
             self._size = self._max - self._min
-            if not self._is_point_cloud:
+            if self.model_type() == ModelType.Mesh:
                 self._draw_offset = (self._max + self._min) / 2
                 self._draw_offset[2] = self._min[2]
             self._max -= self._draw_offset
@@ -83,8 +103,13 @@ class Model(object):
     def get_boundary_circle(self):
         return self._boundary_circle_size
 
-    def is_point_cloud(self):
-        return self._is_point_cloud
+    def model_type(self):
+        return self._model_type
+
+    def set_model_type(self, new_type):
+        self._model_type = new_type
+        for callback in self.on_type_changed_callbacks:
+            callback(self._model_type)
 
     def get_scale(self):
         return np.array([
@@ -107,6 +132,10 @@ class Mesh(object):
         self.vertex_count = 0
         self.vbo = None
         self._obj = obj
+        self.has_normals = False
+        self.has_colors = False
+        self.estimator = None
+        self.reconstruction = None
 
     def _add_vertex(self, x, y, z, r=255, g=255, b=255):
         n = self.vertex_count
@@ -134,6 +163,58 @@ class Mesh(object):
         self.normal = np.zeros((face_number * 3, 3), np.float32)
         self.vertex_count = 0
 
+    def clear_normals(self):
+        self.normal = []
+
+
+    def start_normals_with_normal_estimation(self, **kwargs):
+        self.estimator = NormalEstimation(self, **kwargs)
+        self.estimator.run()
+
+    def is_finished_normals_with_normal_estimation(self):
+        assert self.estimator is not None
+        return_code = self.estimator.check_process()
+        return return_code is not None
+
+    def result_normals_with_normal_estimation(self):
+        assert self.estimator is not None
+        self.normal = self.estimator.get_normals()
+        self.has_normals = True
+        self.estimator = None
+        return self.normal
+
+    def stop_normals_with_normal_estimation(self):
+        if self.estimator is not None:
+            try:
+                self.estimator.terminate()
+                self.estimator = None
+            except:
+                pass
+
+
+    def start_reconstruct_poisson(self, **kwargs):
+        self.reconstruction = PoissonReconstruction(self, **kwargs)
+        self.reconstruction.run()
+
+    def is_finished_reconstruct_poisson(self):
+        assert self.reconstruction is not None
+        return_code = self.reconstruction.check_process()
+        return return_code is not None
+
+    def result_normals_reconstruct_poisson(self):
+        assert self.reconstruction is not None
+        name = self.reconstruction.output_name
+        self.reconstruction = None
+        return name
+
+    def stop_normals_reconstruct_poisson(self):
+        if self.reconstruction is not None:
+            try:
+                self.reconstruction.terminate()
+                self.reconstruction = None
+            except:
+                pass
+
     def _calculate_normals(self):
         # Calculate the normals
         tris = self.vertexes.reshape(self.vertex_count / 3, 3, 3)
@@ -141,3 +222,4 @@ class Mesh(object):
         normals /= np.linalg.norm(normals)
         n = np.concatenate((np.concatenate((normals, normals), axis=1), normals), axis=1)
         self.normal = n.reshape(self.vertex_count, 3)
+        self.has_normals = True

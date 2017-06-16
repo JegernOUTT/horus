@@ -8,9 +8,10 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 import wx._core
 
 from horus.util import version
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredButton, ColoredStaticText
 
 
-class VersionWindow(wx.Dialog):
+class VersionWindow(ColoredDialog):
 
     def __init__(self, parent):
         super(VersionWindow, self).__init__(
@@ -18,10 +19,10 @@ class VersionWindow(wx.Dialog):
             size=(420, -1), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         # Elements
-        self.description = wx.StaticText(
+        self.description = ColoredStaticText(
             self, label=_('A new version of Horus is available, would you like to download it?'))
-        self.download_button = wx.Button(self, label=_('Download'))
-        self.cancel_button = wx.Button(self, label=_('Cancel'))
+        self.download_button = ColoredButton(self, label=_('Download'))
+        self.cancel_button = ColoredButton(self, label=_('Cancel'))
 
         self.download = False
 

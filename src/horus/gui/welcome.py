@@ -12,13 +12,16 @@ from horus.util import profile, resources
 
 from horus.gui.wizard.main import Wizard
 from horus.gui.util.image_view import ImageView
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredCheckBox, ColoredPanel, ColoredStaticLine, \
+    ColoredStaticText, ColoredButton
 
 
-class WelcomeDialog(wx.Dialog):
+class WelcomeDialog(ColoredDialog):
 
     def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, size=(640 + 120, 480 + 40),
+        ColoredDialog.__init__(self, parent, size=(640 + 120, 480 + 40),
                            style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+
 
         self.parent = parent
         self.last_files = profile.settings['last_files']
@@ -26,7 +29,7 @@ class WelcomeDialog(wx.Dialog):
         # Elements
         header = Header(self)
         content = Content(self)
-        check_box_show = wx.CheckBox(
+        check_box_show = ColoredCheckBox(
             self, label=_("Don't show this dialog again"), style=wx.ALIGN_LEFT)
         check_box_show.SetValue(not profile.settings['show_welcome'])
 
@@ -55,19 +58,19 @@ class WelcomeDialog(wx.Dialog):
         self.Destroy()
 
 
-class Header(wx.Panel):
+class Header(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Elements
         logo = ImageView(self)
         logo.set_image(wx.Image(resources.get_path_for_image("logo.png")))
-        title_text = wx.StaticText(self, label=_("3D scanning for everyone"))
+        title_text = ColoredStaticText(self, label=_("3D scanning for everyone"))
         title_font = title_text.GetFont()
         title_font.SetPointSize(14)
         title_text.SetFont(title_font)
-        separator = wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL)
+        separator = ColoredStaticLine(self, -1, style=wx.LI_HORIZONTAL)
 
         # Layout
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -79,18 +82,18 @@ class Header(wx.Panel):
         self.Layout()
 
 
-class CreateNew(wx.Panel):
+class CreateNew(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Elements
-        title_text = wx.StaticText(self, label=_("Create new"))
-        wizard_button = wx.Button(self, label=_("Wizard mode (step by step)"))
-        scan_button = wx.Button(self, label=_("Scan using recent settings"))
-        # advanced_control_button = wx.Button(self, label=_("Advanced control"))
-        advanced_adjustment_button = wx.Button(self, label=_("Advanced adjustment"))
-        advanced_calibration_button = wx.Button(self, label=_("Advanced calibration"))
+        title_text = ColoredStaticText(self, label=_("Create new"))
+        wizard_button = ColoredButton(self, label=_("Wizard mode (step by step)"))
+        scan_button = ColoredButton(self, label=_("Scan using recent settings"))
+        # advanced_control_button = ColoredButton(self, label=_("Advanced control"))
+        advanced_adjustment_button = ColoredButton(self, label=_("Advanced adjustment"))
+        advanced_calibration_button = ColoredButton(self, label=_("Advanced calibration"))
 
         # Layout
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -145,13 +148,13 @@ class CreateNew(wx.Panel):
         parent.Close()
 
 
-class OpenRecent(wx.Panel):
+class OpenRecent(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Elements
-        title_text = wx.StaticText(self, label=_("Open recent file"))
+        title_text = ColoredStaticText(self, label=_("Open recent file"))
 
         lastFiles = profile.settings['last_files']
         lastFiles.reverse()
@@ -161,7 +164,7 @@ class OpenRecent(wx.Panel):
         vbox.Add(title_text, 0, wx.BOTTOM | wx.CENTER, 10)
 
         for path in lastFiles:
-            button = wx.Button(self, label=os.path.basename(path), name=path)
+            button = ColoredButton(self, label=os.path.basename(path), name=path)
             button.Bind(wx.EVT_BUTTON, self.on_button_pressed)
             vbox.Add(button, 0, wx.ALL | wx.EXPAND, 5)
 
@@ -176,13 +179,14 @@ class OpenRecent(wx.Panel):
         parent.parent.update_workbench(workbench)
         parent.parent.append_last_file(button.GetName())
         parent.parent.workbench['scanning'].scene_view.load_file(button.GetName())
+        parent.parent.subscribe_to_model_type()
         parent.Close()
 
 
-class Content(wx.Panel):
+class Content(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Elements
         create_new = CreateNew(self)
@@ -191,7 +195,7 @@ class Content(wx.Panel):
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(create_new, 1, wx.ALL | wx.EXPAND, 10)
-        hbox.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 20)
+        hbox.Add(ColoredStaticLine(self, style=wx.LI_VERTICAL), 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 20)
         hbox.Add(open_recent, 1, wx.ALL | wx.EXPAND, 10)
         self.SetSizer(hbox)
         self.Layout()

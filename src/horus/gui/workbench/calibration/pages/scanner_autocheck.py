@@ -12,12 +12,13 @@ from horus.engine.calibration.autocheck import PatternNotDetected, WrongMotorDir
     LaserNotDetected
 
 from horus.gui.workbench.calibration.pages.video_page import VideoPage
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredMessageDialog
 
 
-class ScannerAutocheckPages(wx.Panel):
+class ScannerAutocheckPages(ColoredPanel):
 
     def __init__(self, parent, start_callback=None, exit_callback=None):
-        wx.Panel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
+        ColoredPanel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
 
         self.start_callback = start_callback
         self.exit_callback = exit_callback
@@ -65,14 +66,14 @@ class ScannerAutocheckPages(wx.Panel):
         image_capture.capture_pattern()
 
         if ret:
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self, _("Scanner configured correctly"),
                 _("Success"), wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
         else:
             if isinstance(result, PatternNotDetected):
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _("Please, put the pattern on the platform. "
                             "Also you can set up the calibration's capture "
                             "settings in the \"Adjustment workbench\" "
@@ -81,7 +82,7 @@ class ScannerAutocheckPages(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
             elif isinstance(result, WrongMotorDirection):
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _(
                         "Please, select \"Invert the motor direction\" in the preferences"),
                     _(result), wx.OK | wx.ICON_ERROR)
@@ -89,7 +90,7 @@ class ScannerAutocheckPages(wx.Panel):
                 dlg.Destroy()
                 self.GetParent().GetParent().launch_preferences(basic=True)
             elif isinstance(result, LaserNotDetected):
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _("Please, check the lasers connection. "
                             "Also you can set up the calibration's capture and "
                             "segmentation settings in the \"Adjustment workbench\" "

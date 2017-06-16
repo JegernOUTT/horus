@@ -6,29 +6,30 @@ __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.'
 __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.html'
 
 import wx._core
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredStaticText, ColoredGauge, ColoredButton
 
 
-class Page(wx.Panel):
+class Page(ColoredPanel):
 
     def __init__(self, parent, title="Title", desc="", left="Left", right="Right",
                  button_left_callback=None, button_right_callback=None, view_progress=False):
-        wx.Panel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
+        ColoredPanel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
 
         self.button_left_callback = button_left_callback
         self.button_right_callback = button_right_callback
 
         # Elements
-        self.panel = wx.Panel(self)
-        button_panel = wx.Panel(self)
-        title_text = wx.StaticText(self, label=title)
+        self.panel = ColoredPanel(self)
+        button_panel = ColoredPanel(self)
+        title_text = ColoredStaticText(self, label=title)
         title_font = title_text.GetFont()
         title_font.SetWeight(wx.BOLD)
         title_text.SetFont(title_font)
         if desc != "":
-            self.desc_text = wx.StaticText(self, label=desc)
-        self.gauge = wx.Gauge(self, range=100, size=(-1, 30))
-        self.left_button = wx.Button(button_panel, -1, left)
-        self.right_button = wx.Button(button_panel, -1, right)
+            self.desc_text = ColoredStaticText(self, label=desc)
+        self.gauge = ColoredGauge(self, range=100, size=(-1, 30))
+        self.left_button = ColoredButton(button_panel, -1, left)
+        self.right_button = ColoredButton(button_panel, -1, right)
         if not view_progress:
             self.gauge.Hide()
 

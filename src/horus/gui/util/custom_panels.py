@@ -9,12 +9,14 @@ import wx._core
 from collections import OrderedDict
 
 from horus.util import profile, resources, system as sys
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredStaticText, ColoredButton, ColoredToggleButton, \
+    ColoredSlider, ColoredComboBox, ColoredRadioButton, ColoredTextCtrl
 
 
-class ExpandableCollection(wx.Panel):
+class ExpandableCollection(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
         self.parent = parent
         self.expandable_panels = OrderedDict()
 
@@ -66,11 +68,11 @@ class ExpandableCollection(wx.Panel):
             panel.content.update_from_profile()
 
 
-class ExpandablePanel(wx.Panel):
+class ExpandablePanel(ColoredPanel):
 
     def __init__(self, parent, title="", selected_callback=None,
                  has_undo=True, has_restore=True, restore_callback=None):
-        wx.Panel.__init__(self, parent, size=(-1, -1))
+        ColoredPanel.__init__(self, parent, size=(-1, -1))
 
         # Elements
         self.parent = parent
@@ -212,13 +214,13 @@ class ExpandablePanel(wx.Panel):
                 self.restore_button.Disable()
 
 
-class TitleText(wx.Panel):
+class TitleText(ColoredPanel):
 
     def __init__(self, parent, title, hand_cursor=True):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Elements
-        self.title = wx.StaticText(self, label=title)
+        self.title = ColoredStaticText(self, label=title)
         title_font = self.title.GetFont()
         title_font.SetWeight(wx.BOLD)
         self.title.SetFont(title_font)
@@ -244,10 +246,10 @@ class TitleText(wx.Panel):
         self.Layout()
 
 
-class ControlCollection(wx.Panel):
+class ControlCollection(ColoredPanel):
 
     def __init__(self, parent, append_undo_callback=None, release_undo_callback=None):
-        wx.Panel.__init__(self, parent, size=(100, 100))
+        ColoredPanel.__init__(self, parent, size=(100, 100))
 
         # Elements
         self.control_panels = OrderedDict()
@@ -300,10 +302,10 @@ class ControlCollection(wx.Panel):
         self.Layout()
 
 
-class ControlPanel(wx.Panel):
+class ControlPanel(ColoredPanel):
 
     def __init__(self, parent, name, tooltip=None):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
         self.name = name
         self.setting = profile.settings.get_setting(self.name)
         if tooltip:
@@ -351,8 +353,8 @@ class ControlPanel(wx.Panel):
         value = profile.settings[self.name]
         # TODO:
         if self.control is not None and \
-           not isinstance(self.control, wx.Button) and \
-           not isinstance(self.control, wx.ToggleButton):
+           not isinstance(self.control, ColoredButton) and \
+           not isinstance(self.control, ColoredToggleButton):
             self.control.SetValue(value)
             self.set_engine(value)
 
@@ -372,12 +374,12 @@ class Slider(ControlPanel):
         self.flag_first_move = True
 
         # Elements
-        self.label = wx.StaticText(self, label=_(self.setting._label), size=(130, -1))
-        self.control = wx.Slider(self, value=profile.settings[name],
-                                 minValue=profile.settings.get_min_value(name),
-                                 maxValue=profile.settings.get_max_value(name),
-                                 size=(150, -1),
-                                 style=wx.SL_LABELS)
+        self.label = ColoredStaticText(self, label=_(self.setting._label), size=(130, -1))
+        self.control = ColoredSlider(self, value=profile.settings[name],
+                                     minValue=profile.settings.get_min_value(name),
+                                     maxValue=profile.settings.get_max_value(name),
+                                     size=(150, -1),
+                                     style=wx.SL_LABELS)
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -428,12 +430,12 @@ class ComboBox(ControlPanel):
         self.key_dict = dict(zip(_choices, choices))
 
         # Elements
-        label = wx.StaticText(self, label=_(self.setting._label), size=(130, -1))
-        self.control = wx.ComboBox(self, wx.ID_ANY,
-                                   value=_(profile.settings[self.name]),
-                                   choices=_choices,
-                                   size=(150, -1),
-                                   style=wx.CB_READONLY)
+        label = ColoredStaticText(self, label=_(self.setting._label), size=(130, -1))
+        self.control = ColoredComboBox(self, wx.ID_ANY,
+                                       value=_(profile.settings[self.name]),
+                                       choices=_choices,
+                                       size=(150, -1),
+                                       style=wx.CB_READONLY)
 
         self.control.SetValue_original = self.control.SetValue
         self.control.SetValue = self.SetValue_overwrite
@@ -465,7 +467,7 @@ class CheckBox(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, label=_(self.setting._label), size=(130, -1))
+        label = ColoredStaticText(self, label=_(self.setting._label), size=(130, -1))
         self.control = wx.CheckBox(self, size=(150, -1))
         self.control.SetValue(profile.settings[self.name])
 
@@ -493,8 +495,8 @@ class RadioButton(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, label=_(self.setting._label))
-        self.control = wx.RadioButton(self, style=wx.ALIGN_RIGHT)
+        label = ColoredStaticText(self, label=_(self.setting._label))
+        self.control = ColoredRadioButton(self, style=wx.ALIGN_RIGHT)
         self.control.SetValue(profile.settings[self.name])
 
         # Layout
@@ -520,8 +522,8 @@ class TextBox(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(140, -1), label=_(self.setting._label))
-        self.control = wx.TextCtrl(self, size=(120, -1), style=wx.TE_RIGHT)
+        label = ColoredStaticText(self, size=(140, -1), label=_(self.setting._label))
+        self.control = ColoredTextCtrl(self, size=(120, -1), style=wx.TE_RIGHT)
         self.control.SetValue(profile.settings[self.name])
 
         # Layout
@@ -548,8 +550,8 @@ class IntLabel(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(130, -1), label=_(self.setting._label))
-        self.control = wx.StaticText(self, size=(150, -1), style=wx.TE_RIGHT)
+        label = ColoredStaticText(self, size=(130, -1), label=_(self.setting._label))
+        self.control = ColoredStaticText(self, size=(150, -1), style=wx.TE_RIGHT)
         self.control.SetLabel(str(profile.settings[self.name]))
 
         # Layout
@@ -564,19 +566,19 @@ class IntLabel(ControlPanel):
         self.control.SetLabel(str(value))
 
 
-class IntBox(wx.TextCtrl):
+class IntBox(ColoredTextCtrl):
 
     def __init__(self, *args, **kwargs):
-        wx.TextCtrl.__init__(self, *args, **kwargs)
+        ColoredTextCtrl.__init__(self, *args, **kwargs)
         self.old_value = 0
 
     def SetValue(self, value):
         self.old_value = value
-        wx.TextCtrl.SetValue(self, str(int(value)))
+        ColoredTextCtrl.SetValue(self, str(int(value)))
 
     def GetValue(self):
         try:
-            value = int(wx.TextCtrl.GetValue(self))
+            value = int(ColoredTextCtrl.GetValue(self))
         except:
             value = self.old_value
             self.SetValue(value)
@@ -593,7 +595,7 @@ class IntTextBox(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(130, -1), label=_(self.setting._label))
+        label = ColoredStaticText(self, size=(130, -1), label=_(self.setting._label))
         self.control = IntBox(self, size=(150, -1), style=wx.TE_RIGHT)
         self.control.SetValue(profile.settings[self.name])
 
@@ -622,19 +624,19 @@ class IntTextBox(ControlPanel):
         self.release_restore()
 
 
-class FloatBox(wx.TextCtrl):
+class FloatBox(ColoredTextCtrl):
 
     def __init__(self, *args, **kwargs):
-        wx.TextCtrl.__init__(self, *args, **kwargs)
+        ColoredTextCtrl.__init__(self, *args, **kwargs)
         self.old_value = 0.0
 
     def SetValue(self, value):
         self.old_value = value
-        wx.TextCtrl.SetValue(self, str(round(value, 4)))
+        ColoredTextCtrl.SetValue(self, str(round(value, 4)))
 
     def GetValue(self):
         try:
-            value = float(wx.TextCtrl.GetValue(self))
+            value = float(ColoredTextCtrl.GetValue(self))
         except:
             value = self.old_value
             self.SetValue(value)
@@ -651,7 +653,7 @@ class FloatTextBox(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(130, -1), label=_(self.setting._label))
+        label = ColoredStaticText(self, size=(130, -1), label=_(self.setting._label))
         self.control = FloatBox(self, size=(150, -1), style=wx.TE_RIGHT)
         self.control.SetValue(profile.settings[self.name])
 
@@ -673,10 +675,10 @@ class FloatTextBox(ControlPanel):
         self.release_restore()
 
 
-class FloatBoxArray(wx.Panel):
+class FloatBoxArray(ColoredPanel):
 
     def __init__(self, parent, value, size, onedit_callback=None):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
         self.onedit_callback = onedit_callback
         self.value = value
         self.size = size
@@ -728,7 +730,7 @@ class FloatTextBoxArray(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(140, -1), label=_(self.setting._label))
+        label = ColoredStaticText(self, size=(140, -1), label=_(self.setting._label))
         self.control = FloatBoxArray(self, value=profile.settings[name], size=(50, -1),
                                      onedit_callback=self._on_text_box_lost_focus)
 
@@ -756,8 +758,8 @@ class FloatLabel(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(160, -1), label=_(self.setting._label))
-        self.control = wx.StaticText(self, size=(100, -1), style=wx.TE_RIGHT)
+        label = ColoredStaticText(self, size=(160, -1), label=_(self.setting._label))
+        self.control = ColoredStaticText(self, size=(100, -1), style=wx.TE_RIGHT)
         self.control.SetLabel(str(round(profile.settings[self.name], 4)))
 
         # Layout
@@ -772,10 +774,10 @@ class FloatLabel(ControlPanel):
         self.control.SetLabel(str(round(value, 3)))
 
 
-class FloatStaticArray(wx.Panel):
+class FloatStaticArray(ColoredPanel):
 
     def __init__(self, parent, value, size):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
         self.value = value
         self.size = size
         if len(self.value.shape) == 1:
@@ -788,7 +790,7 @@ class FloatStaticArray(wx.Panel):
         for i in range(self.r):
             jbox = wx.BoxSizer(wx.HORIZONTAL)
             for j in range(self.c):
-                self.texts[i][j] = wx.StaticText(self, size=self.size, style=wx.TE_RIGHT)
+                self.texts[i][j] = ColoredStaticText(self, size=self.size, style=wx.TE_RIGHT)
                 if self.r == 1:
                     self.texts[i][j].SetLabel(str(round(self.value[j], 4)))
                 else:
@@ -814,7 +816,7 @@ class FloatLabelArray(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        label = wx.StaticText(self, size=(140, -1), label=_(self.setting._label))
+        label = ColoredStaticText(self, size=(140, -1), label=_(self.setting._label))
         self.control = FloatStaticArray(self, value=profile.settings[name], size=(50, -1))
 
         # Layout
@@ -832,7 +834,7 @@ class Button(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        self.control = wx.Button(self, label=_(self.setting._label))
+        self.control = ColoredButton(self, label=_(self.setting._label))
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -854,7 +856,7 @@ class CallbackButton(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        self.control = wx.Button(self, label=_(self.setting._label))
+        self.control = ColoredButton(self, label=_(self.setting._label))
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -882,7 +884,7 @@ class ToggleButton(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        self.control = wx.ToggleButton(self, label=_(self.setting._label))
+        self.control = ColoredToggleButton(self, label=_(self.setting._label))
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)

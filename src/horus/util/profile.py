@@ -514,9 +514,17 @@ class Settings(collections.MutableMapping):
         self._add_setting(
             Setting('machine_shape', _('Machine shape'), 'machine_settings',
                     unicode, u'Circular', possible_values=(u'Circular', u'Rectangular')))
-        self._add_setting(
-            Setting('machine_model_path', _('Machine model'), 'machine_settings',
-                    unicode, unicode(resources.get_path_for_mesh('ciclop_platform.stl'))))
+
+        if os.name != 'nt':
+            self._add_setting(
+                Setting('machine_model_path', _('Machine model'), 'machine_settings',
+                        unicode, unicode(resources.get_path_for_mesh('ciclop_platform.stl'),
+                                         encoding='utf-8')))
+        else:
+            self._add_setting(
+                Setting('machine_model_path', _('Machine model'), 'machine_settings',
+                        unicode, unicode(resources.get_path_for_mesh('ciclop_platform.stl'))))
+
         # self._add_setting(
         #     Setting('roi_width', _('Width (mm)'), 'machine_settings',
         #             int, 200, min_value=0, max_value=250))
@@ -547,7 +555,8 @@ class Settings(collections.MutableMapping):
         self._add_setting(
             Setting('language', _('Language'), 'preferences', unicode, u'English',
                     possible_values=(u'English', u'Español', u'Français',
-                                     u'Deutsch', u'Italiano', u'Português'),
+                                     u'Deutsch', u'Italiano', u'Português',
+                                     u'Russian'),
                     tooltip=_('Change the language of Horus. '
                               'Switching language will require a program restart')))
 

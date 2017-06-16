@@ -18,6 +18,7 @@ from horus.gui.workbench.workbench import Workbench
 from horus.gui.workbench.scanning.view_page import ViewPage
 from horus.gui.workbench.scanning.panels import ScanParameters, RotatingPlatform, \
     PointCloudROI, PointCloudColor
+from horus.gui.colored.colored_elements import ColoredMessageDialog
 
 
 class ScanningWorkbench(Workbench):
@@ -32,25 +33,26 @@ class ScanningWorkbench(Workbench):
         self.play_tool = self.toolbar_scan.AddLabelTool(
             wx.NewId(), _("Play"),
             wx.Bitmap(resources.get_path_for_image("play.png")), shortHelp=_("Play"))
-        self.stop_tool = self.toolbar_scan.AddLabelTool(
-            wx.NewId(), _("Stop"),
-            wx.Bitmap(resources.get_path_for_image("stop.png")), shortHelp=_("Stop"))
         self.pause_tool = self.toolbar_scan.AddLabelTool(
             wx.NewId(), _("Pause"),
             wx.Bitmap(resources.get_path_for_image("pause.png")), shortHelp=_("Pause"))
+        self.stop_tool = self.toolbar_scan.AddLabelTool(
+            wx.NewId(), _("Stop"),
+            wx.Bitmap(resources.get_path_for_image("stop.png")), shortHelp=_("Stop"))
+
         self.toolbar_scan.Realize()
         self.toolbar_scan.GetParent().Layout()
 
         ciclop_scan.point_cloud_callback = self.point_cloud_callback
 
         self._enable_tool_scan(self.play_tool, False)
-        self._enable_tool_scan(self.stop_tool, False)
         self._enable_tool_scan(self.pause_tool, False)
+        self._enable_tool_scan(self.stop_tool, False)
 
         # Events
         self.toolbar_scan.GetParent().Bind(wx.EVT_TOOL, self.on_play_tool_clicked, self.play_tool)
-        self.toolbar_scan.GetParent().Bind(wx.EVT_TOOL, self.on_stop_tool_clicked, self.stop_tool)
         self.toolbar_scan.GetParent().Bind(wx.EVT_TOOL, self.on_pause_tool_clicked, self.pause_tool)
+        self.toolbar_scan.GetParent().Bind(wx.EVT_TOOL, self.on_stop_tool_clicked, self.stop_tool)
 
     def add_panels(self):
         self.add_panel('scan_parameters', ScanParameters)
@@ -181,7 +183,7 @@ class ScanningWorkbench(Workbench):
             ciclop_scan.resume()
         else:
             if not calibration_data.check_calibration():
-                dlg = wx.MessageDialog(self,
+                dlg = ColoredMessageDialog(self,
                                        _("Calibration parameters are not correct.\n"
                                          "Please perform calibration process:\n"
                                          "  1. Scanner autocheck\n"
@@ -193,7 +195,7 @@ class ScanningWorkbench(Workbench):
                 return
 
             if profile.settings['laser_triangulation_hash'] != calibration_data.md5_hash():
-                dlg = wx.MessageDialog(self,
+                dlg = ColoredMessageDialog(self,
                                        _("Laser triangulation calibration has been performed \n"
                                          "with different camera intrinsics values.\n"
                                          "Please perform Laser triangulation calibration again:\n"
@@ -205,7 +207,7 @@ class ScanningWorkbench(Workbench):
                 return
 
             if profile.settings['platform_extrinsics_hash'] != calibration_data.md5_hash():
-                dlg = wx.MessageDialog(self,
+                dlg = ColoredMessageDialog(self,
                                        _("Platform extrinsics calibration has been performed \n"
                                          "with different camera intrinsics values.\n"
                                          "Please perform Platform extrinsics calibration again:\n"
@@ -216,18 +218,18 @@ class ScanningWorkbench(Workbench):
                 dlg.Destroy()
                 return
 
-            result = True
-            if self.scene_view._object is not None:
-                dlg = wx.MessageDialog(self,
-                                       _("Your current model will be deleted.\n"
-                                         "Are you sure you want to delete it?"),
-                                       _("Clear point cloud"), wx.YES_NO | wx.ICON_QUESTION)
-                result = dlg.ShowModal() == wx.ID_YES
-                dlg.Destroy()
-            if result:
-                ciclop_scan.set_callbacks(self.before_scan,
-                                          None, lambda r: wx.CallAfter(self.after_scan, r))
-                ciclop_scan.start()
+            # result = True
+            # if self.scene_view._object is not None:
+            #     dlg = ColoredMessageDialog(self,
+            #                            _("Your current model will be deleted.\n"
+            #                              "Are you sure you want to delete it?"),
+            #                            _("Clear point cloud"), wx.YES_NO | wx.ICON_QUESTION)
+            #     result = dlg.ShowModal() == wx.ID_YES
+            #     dlg.Destroy()
+            # if result:
+            ciclop_scan.set_callbacks(self.before_scan,
+                                      None, lambda r: wx.CallAfter(self.after_scan, r))
+            ciclop_scan.start()
 
     def before_scan(self):
         self.scene_view._view_roi = False
@@ -252,7 +254,7 @@ class ScanningWorkbench(Workbench):
         ret, result = response
         if ret:
             self.gauge.SetValue(self.gauge.GetRange())
-            dlg = wx.MessageDialog(self,
+            dlg = ColoredMessageDialog(self,
                                    _("Scanning has finished. If you want to save your "
                                      "point cloud go to \"File > Save model\""),
                                    _("Scanning finished!"), wx.OK | wx.ICON_INFORMATION)
@@ -270,7 +272,7 @@ class ScanningWorkbench(Workbench):
                 self.on_scan_finished()
                 self.GetParent().toolbar.update_status(False)
                 driver.disconnect()
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self,
                     "Low exposure values can cause a timing issue at the USB stack level on "
                     "v4l2_ioctl function in VIDIOC_S_CTRL mode. This is a Logitech issue on Linux",
@@ -281,7 +283,7 @@ class ScanningWorkbench(Workbench):
     def on_stop_tool_clicked(self, event):
         paused = ciclop_scan._inactive
         ciclop_scan.pause()
-        dlg = wx.MessageDialog(self,
+        dlg = ColoredMessageDialog(self,
                                _("Your current scanning will be stopped.\n"
                                  "Are you sure you want to stop?"),
                                _("Stop scanning"), wx.YES_NO | wx.ICON_QUESTION)

@@ -16,6 +16,8 @@ from collections import OrderedDict
 from horus import __version__, __datetime__, __commit__
 from horus.gui.engine import driver, image_capture, ciclop_scan, scanner_autocheck, \
     laser_triangulation, platform_extrinsics
+from horus.gui.workbench.convert.main import ConvertWorkbench
+from horus.util.model import ModelType
 
 from horus.gui.welcome import WelcomeDialog
 from horus.gui.util.preferences import PreferencesDialog
@@ -26,11 +28,13 @@ from horus.gui.workbench.control.main import ControlWorkbench
 from horus.gui.workbench.adjustment.main import AdjustmentWorkbench
 from horus.gui.workbench.calibration.main import CalibrationWorkbench
 from horus.gui.workbench.scanning.main import ScanningWorkbench
+from horus.gui.workbench.convert.main import ConvertWorkbench
 
 from horus.gui.wizard.main import Wizard
 from horus.gui.util.version_window import VersionWindow
 
 from horus.util import profile, resources, mesh_loader, version, system as sys
+from horus.gui.colored.colored_elements import ColouredFrame, ColoredMenuBar, ColoredFileDialog, ColoredMessageDialog
 
 import logging
 logger = logging.getLogger(__name__)
@@ -38,10 +42,9 @@ logger = logging.getLogger(__name__)
 __title__ = "Horus " + __version__
 
 
-class MainWindow(wx.Frame):
-
+class MainWindow(ColouredFrame):
     def __init__(self):
-        wx.Frame.__init__(self, None, title=__title__, size=(980, 623))
+        ColouredFrame.__init__(self, None, title=__title__, size=(980, 623))
 
         logger.info("Start application " + __title__)
 
@@ -53,6 +56,7 @@ class MainWindow(wx.Frame):
         self.load_menu()
         self.load_workbenches()
         self.update_profile_to_all_controls()
+        self.load_status_bar()
 
         ws, hs = self.GetSize()
         x, y, w, h = wx.Display(0).GetGeometry()
@@ -61,33 +65,42 @@ class MainWindow(wx.Frame):
         self.SetIcon(wx.Icon(resources.get_path_for_image("horus.ico"), wx.BITMAP_TYPE_ICO))
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.subscribe_to_model_type()
 
     def __del__(self):
         logger.info("Finish application " + __title__)
 
     def load_workbenches(self):
         self.toolbar = ToolbarConnection(self, self.on_connect, self.on_disconnect)
+
         self.workbench = OrderedDict()
         self.workbench['control'] = ControlWorkbench(self)
         self.workbench['adjustment'] = AdjustmentWorkbench(self)
         self.workbench['calibration'] = CalibrationWorkbench(self)
         self.workbench['scanning'] = ScanningWorkbench(self, self.toolbar.toolbar_scan)
+        self.workbench['convert'] = ConvertWorkbench(self, self.toolbar.toolbar_convert,
+                                                     self.workbench['scanning'],
+                                                     self.reconstruction_callback)
 
+        self.toolbar.toolbar_convert.EnableTool(1, False)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.toolbar, 0, wx.ALL | wx.EXPAND)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_selected, self.toolbar.combo)
 
         for workbench in self.workbench.values():
-            self.toolbar.combo.Append(workbench.name)
-            sizer.Add(workbench, 1, wx.ALL | wx.EXPAND)
+            if workbench.name != 'Converting workbench':
+                self.toolbar.combo.Append(workbench.name)
+                sizer.Add(workbench, 1, wx.ALL | wx.EXPAND)
         name = self.workbench[profile.settings['workbench']].name
         self.update_workbench(name)
         self.SetSizer(sizer)
 
         self.workbench['scanning'].scene_view.set_point_size(profile.settings['point_size'])
+        self.toolbar.combo.Hide()
 
     def load_menu(self):
-        self.menu_bar = wx.MenuBar()
+        self.menu_bar = ColoredMenuBar()
+        self.menu_bar.SetBackgroundColour('#3a465a')
 
         # Menu File
         self.menu_file = wx.Menu()
@@ -134,6 +147,7 @@ class MainWindow(wx.Frame):
         self.menu_scanning_scene = self.menu_scanning.AppendCheckItem(wx.NewId(), _("Scene"))
         self.menu_view.AppendMenu(wx.NewId(), _("Scanning"), self.menu_scanning)
         self.menu_mode_advanced = self.menu_view.AppendCheckItem(wx.NewId(), _("Advanced mode"))
+        self.menu_show_panels = self.menu_view.AppendCheckItem(wx.NewId(), _("Show settings panels"))
         self.menu_bar.Append(self.menu_view, _("View"))
 
         # Menu Help
@@ -175,6 +189,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_scanning_video_scene_clicked, self.menu_scanning_video)
         self.Bind(wx.EVT_MENU, self.on_scanning_video_scene_clicked, self.menu_scanning_scene)
         self.Bind(wx.EVT_MENU, self.on_mode_advanced_clicked, self.menu_mode_advanced)
+        self.Bind(wx.EVT_MENU, self.on_show_panels_clicked, self.menu_show_panels)
 
         self.Bind(wx.EVT_MENU, self.on_about, self.menu_about)
         self.Bind(wx.EVT_MENU, self.on_welcome, self.menu_welcome)
@@ -183,13 +198,17 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda e: webbrowser.open(
             'https://github.com/bqlabs/horus'), self.menu_sources)
 
+    def load_status_bar(self):
+        self.status_bar = self.CreateStatusBar(2)
+        self.status_bar.SetBackgroundColour('#313b4a')
+
     def on_launch_wizard(self, event):
         self.workbench[profile.settings['workbench']].on_close()
         Wizard(self)
 
     def on_load_model(self, event):
         last_file = os.path.split(profile.settings['last_file'])[0]
-        dlg = wx.FileDialog(
+        dlg = ColoredFileDialog(
             self, _("Open 3D model"), last_file, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         wildcard_list = ';'.join(map(lambda s: '*' + s, mesh_loader.load_supported_extensions()))
         wildcard_filter = "All (%s)|%s;%s" % (wildcard_list, wildcard_list, wildcard_list.upper())
@@ -202,13 +221,13 @@ class MainWindow(wx.Frame):
             if filename is not None:
                 self.workbench['scanning'].scene_view.load_file(filename)
                 self.append_last_file(filename)
+                self.subscribe_to_model_type()
         dlg.Destroy()
 
     def on_save_model(self, event):
-        if self.workbench['scanning'].scene_view._object is None or \
-           not self.workbench['scanning'].scene_view._object._is_point_cloud:
+        if self.workbench['scanning'].scene_view._object is None:
             return
-        dlg = wx.FileDialog(self, _("Save 3D model"), os.path.split(
+        dlg = ColoredFileDialog(self, _("Save 3D model"), os.path.split(
             profile.settings['last_file'])[0], style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         file_extensions = mesh_loader.save_supported_extensions()
         wildcard_list = ';'.join(map(lambda s: '*' + s, file_extensions))
@@ -217,16 +236,15 @@ class MainWindow(wx.Frame):
         dlg.SetWildcard(wildcard_filter)
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
-            if not filename.endswith('.ply'):
-                if sys.is_linux():  # hack for linux, as for some reason the .ply is not appended.
-                    filename += '.ply'
+            if filename.endswith('.ply') or filename.endswith('.stl'):
+                filename = filename.split('.')[0]
             mesh_loader.save_mesh(filename, self.workbench['scanning'].scene_view._object)
             self.append_last_file(filename)
         dlg.Destroy()
 
     def on_clear_model(self, event):
         if self.workbench['scanning'].scene_view._object is not None:
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self,
                 _("Your current model will be deleted.\nAre you sure you want to delete it?"),
                 _("Clear point cloud"), wx.YES_NO | wx.ICON_QUESTION)
@@ -234,9 +252,10 @@ class MainWindow(wx.Frame):
             dlg.Destroy()
             if result:
                 self.workbench['scanning'].scene_view._clear_scene()
+                self.toolbar.toolbar_convert.EnableTool(1, False)
 
     def on_open_profile(self, category):
-        dlg = wx.FileDialog(self, _("Select profile file to load"), profile.get_base_path(),
+        dlg = ColoredFileDialog(self, _("Select profile file to load"), profile.get_base_path(),
                             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         dlg.SetWildcard("JSON files (*.json)|*.json")
         if dlg.ShowModal() == wx.ID_OK:
@@ -246,8 +265,8 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def on_save_profile(self, category):
-        dlg = wx.FileDialog(self, _("Select profile file to save"), profile.get_base_path(),
-                            category.replace('_settings', ''), style=wx.FD_SAVE)
+        dlg = ColoredFileDialog(self, _("Select profile file to save"), profile.get_base_path(),
+                                category.replace('_settings', ''), style=wx.FD_SAVE)
         dlg.SetWildcard("JSON files (*.json)|*.json")
         if dlg.ShowModal() == wx.ID_OK:
             profile_file = dlg.GetPath()
@@ -258,7 +277,7 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def on_reset_profile(self, category):
-        dlg = wx.MessageDialog(
+        dlg = ColoredMessageDialog(
             self,
             _("This will reset all profile settings to defaults. "
               "Unless you have saved your current profile, all settings will be lost!\n"
@@ -271,7 +290,7 @@ class MainWindow(wx.Frame):
             self.update_profile_to_all_controls()
 
     def on_clear_log(self, event):
-        dlg = wx.MessageDialog(
+        dlg = ColoredMessageDialog(
             self,
             _("Your current log file will be deleted.\n"
               "Are you sure you want to delete it?"),
@@ -286,8 +305,8 @@ class MainWindow(wx.Frame):
             profile.settings['last_clear_log_date'] = str(current_log_date.strftime(date_format))
 
     def on_export_log(self, event):
-        dlg = wx.FileDialog(self, _("Select log file to save"),
-                            profile.get_base_path(), style=wx.FD_SAVE)
+        dlg = ColoredFileDialog(self, _("Select log file to save"),
+                                profile.get_base_path(), style=wx.FD_SAVE)
         dlg.SetWildcard("Log files (*.log)|*.log")
         if dlg.ShowModal() == wx.ID_OK:
             log_file = dlg.GetPath()
@@ -426,6 +445,14 @@ class MainWindow(wx.Frame):
         self.workbench['calibration'].Layout()
         self.Layout()
 
+    def on_show_panels_clicked(self, event):
+        if not self.menu_show_panels.IsChecked():
+            self.toolbar.combo.Hide()
+            self.Layout()
+        else:
+            self.toolbar.combo.Show()
+            self.Layout()
+
     def on_connect(self):
         for workbench in self.workbench.values():
             workbench.enable_content()
@@ -508,7 +535,7 @@ class MainWindow(wx.Frame):
             if version.check_for_updates():
                 VersionWindow(self)
             else:
-                dlg = wx.MessageDialog(self, _("You are running the latest version of Horus!"), _(
+                dlg = ColoredMessageDialog(self, _("You are running the latest version of Horus!"), _(
                     "Updated!"), wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
                 dlg.Destroy()
@@ -536,7 +563,7 @@ class MainWindow(wx.Frame):
         platform_extrinsics.cancel()
         self.toolbar.update_status(False)
         driver.disconnect()
-        dlg = wx.MessageDialog(self, description, title, wx.OK | wx.ICON_ERROR)
+        dlg = ColoredMessageDialog(self, description, title, wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -622,3 +649,44 @@ class MainWindow(wx.Frame):
         image_capture.set_flush_values(texture, laser, pattern)
         texture, laser, pattern = profile.settings[flush_stream_setting]
         image_capture.set_flush_stream_values(texture, laser, pattern)
+
+    def enable_convert_buttons(self, model_type):
+        if model_type == ModelType.PointCloud:
+            self.toolbar.toolbar_convert.EnableTool(1, True)
+        else:
+            self.toolbar.toolbar_convert.EnableTool(1, False)
+
+    def subscribe_to_model_type(self):
+        if self.workbench['scanning'].scene_view._object is not None:
+            self.status_bar.SetStatusText(
+                'Current model type: {}'.format(str(
+                    self.workbench['scanning'].scene_view._object.model_type()).split('.')[1].lower()))
+            self.enable_convert_buttons(self.workbench['scanning'].scene_view._object.model_type())
+
+            self.workbench['scanning'].scene_view._object.on_type_changed(
+                [lambda x: wx.CallAfter(lambda: self.status_bar.SetStatusText(
+                    'Current model type: {}'.format(str(x).split('.')[1].lower())
+                )),
+                 lambda x: wx.CallAfter(lambda: self.enable_convert_buttons(
+                     self.workbench['scanning'].scene_view._object.model_type())),
+                 ]
+            )
+
+    def reconstruction_callback(self, is_success):
+        if is_success:
+            if not os.path.exists('temp/'):
+                os.makedirs('temp/')
+
+            self.subscribe_to_model_type()
+            name_ply = 'temp/{}.ply'.format(self.workbench['scanning'].scene_view._object._name)
+            name_stl = 'temp/{}.stl'.format(self.workbench['scanning'].scene_view._object._name)
+            mesh_loader.save_mesh(name_ply, self.workbench['scanning'].scene_view._object)
+            mesh_loader.save_mesh(name_stl, self.workbench['scanning'].scene_view._object)
+        else:
+            self._show_message(_("Reconstruction"), wx.ICON_ERROR, _("Mesh reconstruction error"))
+
+    def _show_message(self, title, style, desc):
+        dlg = ColoredMessageDialog(self, desc, title, wx.OK | style)
+        dlg.ShowModal()
+        dlg.Destroy()
+

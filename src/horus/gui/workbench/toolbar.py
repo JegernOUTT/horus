@@ -13,24 +13,30 @@ from horus.gui.engine import driver
 from horus.engine.driver.board import WrongFirmware, BoardNotConnected, OldFirmware
 from horus.engine.driver.camera import WrongCamera, CameraNotConnected, InvalidVideo, \
     WrongDriver
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredToolbar, ColoredComboBox, ColoredMessageDialog, \
+    ColoredStaticLine
 
 
-class Toolbar(wx.Panel):
-
+class Toolbar(ColoredPanel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         # Element
-        self.toolbar = wx.ToolBar(self)
+        self.toolbar = ColoredToolbar(self)
         self.toolbar.SetDoubleBuffered(True)
-        self.toolbar_scan = wx.ToolBar(self)
+        self.toolbar_scan = ColoredToolbar(self)
         self.toolbar_scan.SetDoubleBuffered(True)
-        self.combo = wx.ComboBox(self, -1, size=(250, -1), style=wx.CB_READONLY)
+        self.toolbar_convert = ColoredToolbar(self)
+        self.toolbar_convert.SetDoubleBuffered(True)
+        self.combo = ColoredComboBox(self, -1, size=(350, -1), style=wx.CB_READONLY)
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.toolbar, 0, wx.ALL | wx.EXPAND, 1)
+        # hbox.Add(ColoredStaticLine(self, style=wx.LI_VERTICAL), 0, wx.ALL | wx.EXPAND, 1)
         hbox.Add(self.toolbar_scan, 0, wx.ALL | wx.EXPAND, 1)
+        # hbox.Add(ColoredStaticLine(self, style=wx.LI_VERTICAL), 0, wx.ALL | wx.EXPAND, 1)
+        hbox.Add(self.toolbar_convert, 0, wx.ALL | wx.EXPAND, 1)
         hbox.Add((0, 0), 1, wx.ALL | wx.EXPAND, 1)
         hbox.Add(self.combo, 0, wx.ALL, 10)
         self.SetSizer(hbox)
@@ -38,7 +44,6 @@ class Toolbar(wx.Panel):
 
 
 class ToolbarConnection(Toolbar):
-
     def __init__(
             self, parent, on_connect_callback=None, on_disconnect_callback=None):
 
@@ -47,21 +52,27 @@ class ToolbarConnection(Toolbar):
         self.on_connect_callback = on_connect_callback
         self.on_disconnect_callback = on_disconnect_callback
 
-        # Elements
-        self.connect_tool = self.toolbar.AddLabelTool(
-            wx.NewId(), _("Connect"),
-            wx.Bitmap(resources.get_path_for_image("connect.png")), shortHelp=_("Connect"))
-        self.disconnect_tool = self.toolbar.AddLabelTool(
+        self.set_connect_button()
+
+    def set_disconnect_button(self):
+        self.toolbar.ClearTools()
+        self.is_connected = True
+
+        self.button = self.toolbar.AddLabelTool(
             wx.NewId(), _("Disconnect"),
             wx.Bitmap(resources.get_path_for_image("disconnect.png")), shortHelp=_("Disconnect"))
-        self.toolbar.Realize()
 
-        self._enable_tool(self.connect_tool, True)
-        self._enable_tool(self.disconnect_tool, False)
+        self.Bind(wx.EVT_TOOL, self.on_disconnect_tool_clicked, self.button)
 
-        # Events
-        self.Bind(wx.EVT_TOOL, self.on_connect_tool_clicked, self.connect_tool)
-        self.Bind(wx.EVT_TOOL, self.on_disconnect_tool_clicked, self.disconnect_tool)
+    def set_connect_button(self):
+        self.toolbar.ClearTools()
+        self.is_connected = False
+
+        self.button = self.toolbar.AddLabelTool(
+            wx.NewId(), _("Connect"),
+            wx.Bitmap(resources.get_path_for_image("connect.png")), shortHelp=_("Connect"))
+
+        self.Bind(wx.EVT_TOOL, self.on_connect_tool_clicked, self.button)
 
     def on_connect_tool_clicked(self, event):
         driver.set_callbacks(lambda: wx.CallAfter(self.before_connect),
@@ -75,7 +86,7 @@ class ToolbarConnection(Toolbar):
         del self.wait_cursor
 
     def before_connect(self):
-        self._enable_tool(self.connect_tool, False)
+        self._enable_tool(self.button, False)
         self.GetParent().enable_gui(False)
         driver.board.set_unplug_callback(None)
         driver.camera.set_unplug_callback(None)
@@ -127,8 +138,10 @@ class ToolbarConnection(Toolbar):
         del self.wait_cursor
 
     def update_status(self, status):
-        self._enable_tool(self.connect_tool, not status)
-        self._enable_tool(self.disconnect_tool, status)
+        if status:
+            self.set_disconnect_button()
+        else:
+            self.set_connect_button()
         if status:
             if self.on_connect_callback is not None:
                 self.on_connect_callback()
@@ -143,7 +156,7 @@ class ToolbarConnection(Toolbar):
             driver.camera.set_unplug_callback(None)
 
     def _show_message(self, title, style, desc):
-        dlg = wx.MessageDialog(self, desc, title, wx.OK | style)
+        dlg = ColoredMessageDialog(self, desc, title, wx.OK | style)
         dlg.ShowModal()
         dlg.Destroy()
 

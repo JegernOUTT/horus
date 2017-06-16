@@ -13,20 +13,21 @@ from horus.gui.engine import driver, current_video
 
 from horus.gui.util.video_view import VideoView
 from horus.gui.util.scene_view import SceneView
+from horus.gui.colored.colored_elements import ColouredSplitterWindow, ColoredPanel, ColoredComboBox, ColoredGauge
 
 
-class ViewPage(wx.SplitterWindow):
+class ViewPage(ColouredSplitterWindow):
 
     def __init__(self, parent, get_image):
-        wx.SplitterWindow.__init__(self, parent, style=wx.SP_3D)  # | wx.SP_LIVE_UPDATE)
+        ColouredSplitterWindow.__init__(self, parent, style=wx.SP_3D)  # | wx.SP_LIVE_UPDATE)
 
         self.get_image = get_image
 
         self.video_view = VideoView(self, get_image)
 
-        self.scene_panel = wx.Panel(self)
+        self.scene_panel = ColoredPanel(self)
         self.scene_view = SceneView(self.scene_panel)
-        self.gauge = wx.Gauge(self.scene_panel, size=(-1, 30))
+        self.gauge = ColoredGauge(self.scene_panel, size=(-1, 30))
         self.gauge.Hide()
 
         # Layout
@@ -44,10 +45,10 @@ class ViewPage(wx.SplitterWindow):
         for i in choices:
             _choices.append(_(i))
         self.video_views_dict = dict(zip(_choices, choices))
-        self.combo_video_views = wx.ComboBox(self.video_view,
-                                             value=_(u'Texture'),
-                                             choices=_choices, style=wx.CB_READONLY,
-                                             size=(100, -1), pos=(0, -1))
+        self.combo_video_views = ColoredComboBox(self.video_view,
+                                                 value=_(u'Texture'),
+                                                 choices=_choices, style=wx.CB_READONLY,
+                                                 size=(100, -1), pos=(0, -1))
         self.combo_video_views.Hide()
         self.combo_video_views.Bind(wx.EVT_COMBOBOX, self.on_combo_box_video_views_select)
 

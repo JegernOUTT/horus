@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file is part of the Horus Project
+from horus.gui.colored.colored_elements import ColoredMessageDialog
 
 __author__ = 'Jesús Arroyo Torrens <jesus.arroyo@bq.com>'
 __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.'
@@ -122,7 +123,7 @@ class VideoSettings(ExpandablePanel):
             real_height = driver.camera._height
 
             if real_width != new_width or real_height != new_height:
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self,
                     _("Your camera does not accept this resolution.\n"
                       "Do you want to use the nearest values?"),

@@ -10,8 +10,10 @@ from horus.util import profile, resources
 
 from horus.gui.engine import pattern
 
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredStaticText, ColoredTextCtrl, ColoredButton
 
-class PatternDistanceWindow(wx.Dialog):
+
+class PatternDistanceWindow(ColoredDialog):
 
     def __init__(self, parent):
         super(PatternDistanceWindow, self).__init__(
@@ -21,7 +23,7 @@ class PatternDistanceWindow(wx.Dialog):
         self.value = float(profile.settings['pattern_origin_distance'])
 
         # Elements
-        self.description = wx.StaticText(self, label=_(
+        self.description = ColoredStaticText(self, label=_(
             "The pattern distance value must be higher than 0. "
             "Please change it in the textbox below."))
         self.description.Wrap(400)
@@ -32,12 +34,12 @@ class PatternDistanceWindow(wx.Dialog):
             resources.get_path_for_image('pattern-distance.jpg'), wx.BITMAP_TYPE_ANY)
         self.image = wx.StaticBitmap(self, wx.ID_ANY, wx.BitmapFromImage(self.image))
         self.image.SetToolTip(wx.ToolTip(tooltip))
-        self.label = wx.StaticText(self, label=_("Pattern distance (mm)"))
+        self.label = ColoredStaticText(self, label=_("Pattern distance (mm)"))
         self.label.SetToolTip(wx.ToolTip(tooltip))
-        self.text_box = wx.TextCtrl(
+        self.text_box = ColoredTextCtrl(
             self, value=str(profile.settings['pattern_origin_distance']))
-        self.ok_button = wx.Button(self, label=_("Accept"))
-        self.cancel_button = wx.Button(self, label=_("Cancel"))
+        self.ok_button = ColoredButton(self, label=_("Accept"))
+        self.cancel_button = ColoredButton(self, label=_("Cancel"))
 
         # Events
         self.text_box.Bind(wx.EVT_TEXT, self.on_text_box_changed)

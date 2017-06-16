@@ -25,6 +25,11 @@ import struct
 import numpy as np
 
 from horus.util import model
+from horus.util.model import ModelType
+from horus import __version__
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def _load_ascii(mesh, stream):
@@ -78,3 +83,29 @@ def load_scene(filename):
             _load_binary(m, f)
         obj._post_process_after_load()
         return obj
+
+
+def save_scene(filename, _object):
+    if _object.model_type() == ModelType.Mesh:
+        with open(filename, 'wb') as f:
+            save_scene_stream(f, _object)
+
+
+def save_scene_stream(stream, _object):
+    mesh = _object._mesh
+    np.array([0 for _ in range(80)], dtype=np.byte).tofile(stream)
+    stream.write(struct.pack("<I", mesh.vertex_count // 3))
+
+    if not mesh.has_normals:
+        mesh._calculate_normals()
+
+    i = 0
+    while i < mesh.vertex_count:
+        triangle = mesh.vertexes[i], mesh.vertexes[i + 1], mesh.vertexes[i + 2]
+        stream.write(struct.pack("<ffffffffffffH",
+                                 mesh.normal[i][0], mesh.normal[i][1], mesh.normal[i][2],
+                                 triangle[0][0], triangle[0][1], triangle[0][2],
+                                 triangle[1][0], triangle[1][1], triangle[1][2],
+                                 triangle[2][0], triangle[2][1], triangle[2][2], 0))
+        i += 3
+

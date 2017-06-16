@@ -20,12 +20,13 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 
 from horus.gui.workbench.calibration.pages.page import Page
 from horus.gui.workbench.calibration.pages.capture_page import CapturePage
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredMessageDialog
 
 
-class CameraIntrinsicsPages(wx.Panel):
+class CameraIntrinsicsPages(ColoredPanel):
 
     def __init__(self, parent, start_callback=None, exit_callback=None):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         self.start_callback = start_callback
         self.exit_callback = exit_callback
@@ -138,17 +139,17 @@ class ResultPage(Page):
             self.Layout()
         else:
             if isinstance(result, CameraIntrinsicsError):
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _("Camera intrinsics calibration has failed. Please try again"),
                     _(result), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
 
 
-class CameraIntrinsics3DPlot(wx.Panel):
+class CameraIntrinsics3DPlot(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         self.initialize()
 

@@ -13,6 +13,7 @@ from horus.gui.engine import image_capture, image_detection, camera_intrinsics
 from horus.gui.workbench.calibration.pages.page import Page
 from horus.gui.util.image_view import ImageView
 from horus.gui.util.video_view import VideoView
+from horus.gui.colored.colored_elements import ColoredPanel
 
 
 class CapturePage(Page):
@@ -36,7 +37,7 @@ class CapturePage(Page):
         self.rows, self.columns = 3, 5
         self.panel_grid = []
         self.current_grid = 0
-        self.image_grid_panel = wx.Panel(self.panel)
+        self.image_grid_panel = ColoredPanel(self.panel)
         self.grid_sizer = wx.GridSizer(self.rows, self.columns, 3, 3)
         for panel in xrange(self.rows * self.columns):
             self.panel_grid.append(ImageView(self.image_grid_panel))

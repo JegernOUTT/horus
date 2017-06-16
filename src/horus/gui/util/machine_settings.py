@@ -11,41 +11,45 @@ import wx.lib.intctrl
 
 from horus.util import profile
 
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredStaticText, ColoredIntCtrl, ColoredComboBox, \
+    ColoredButton, ColoredStaticLine, ColoredFileDialog
+
+
 # TODO: refactor PEP8
 
 
-class MachineSettingsDialog(wx.Dialog):
+class MachineSettingsDialog(ColoredDialog):
 
     def __init__(self, parent):
-        wx.Dialog.__init__(self, None, title=_("Machine settings"))
+        ColoredDialog.__init__(self, None, title=_("Machine settings"))
 
         self.main = parent
 
         # Elements
-        self.machineShapeLabel = wx.StaticText(self, label=_("Platform shape"))
+        self.machineShapeLabel = ColoredStaticText(self, label=_("Platform shape"))
         self.machineShapes = profile.settings.get_possible_values("machine_shape")
         self.translatedMachineShapes = [_(s) for s in self.machineShapes]
-        self.machineShapeCombo = wx.ComboBox(
+        self.machineShapeCombo = ColoredComboBox(
             self, choices=self.translatedMachineShapes, size=(170, -1), style=wx.CB_READONLY)
 
-        self.dimensionsStaticText = wx.StaticText(
+        self.dimensionsStaticText = ColoredStaticText(
             self, label=_("Platform dimensions"), style=wx.ALIGN_CENTRE)
-        self.diameterLabel = wx.StaticText(self, label=_("Diameter"))
-        self.diameterField = wx.lib.intctrl.IntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
-        self.widthLabel = wx.StaticText(self, label=_("Width"))
-        self.widthField = wx.lib.intctrl.IntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
-        self.heightLabel = wx.StaticText(self, label=_("Height"))
-        self.heightField = wx.lib.intctrl.IntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
-        self.depthLabel = wx.StaticText(self, label=_("Depth"))
-        self.depthField = wx.lib.intctrl.IntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
+        self.diameterLabel = ColoredStaticText(self, label=_("Diameter"))
+        self.diameterField = ColoredIntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
+        self.widthLabel = ColoredStaticText(self, label=_("Width"))
+        self.widthField = ColoredIntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
+        self.heightLabel = ColoredStaticText(self, label=_("Height"))
+        self.heightField = ColoredIntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
+        self.depthLabel = ColoredStaticText(self, label=_("Depth"))
+        self.depthField = ColoredIntCtrl(self, size=(170, -1), style=wx.TE_RIGHT)
 
-        self.machineModelLabel = wx.StaticText(self, label=_("Machine model"))
-        self.machineModelButton = wx.Button(self, label=_("Browse"))
-        self.machineModelField = wx.StaticText(self, size=(200, -1))
+        self.machineModelLabel = ColoredStaticText(self, label=_("Machine model"))
+        self.machineModelButton = ColoredButton(self, label=_("Browse"))
+        self.machineModelField = ColoredStaticText(self, size=(200, -1))
 
-        self.defaultButton = wx.Button(self, label=_("Default"))
-        self.cancel_button = wx.Button(self, label=_("Cancel"))
-        self.saveButton = wx.Button(self, label=_("Save"))
+        self.defaultButton = ColoredButton(self, label=_("Default"))
+        self.cancel_button = ColoredButton(self, label=_("Cancel"))
+        self.saveButton = ColoredButton(self, label=_("Save"))
 
         # Events
         self.machineShapeCombo.Bind(wx.EVT_COMBOBOX, self.onMachineShapeComboChanged)
@@ -63,7 +67,7 @@ class MachineSettingsDialog(wx.Dialog):
         hbox.AddStretchSpacer()
         hbox.Add(self.machineShapeCombo, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 10)
-        vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         vbox.Add(self.dimensionsStaticText, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 10)
         # Diameter
@@ -90,7 +94,7 @@ class MachineSettingsDialog(wx.Dialog):
         self.depth_hbox.AddStretchSpacer()
         self.depth_hbox.Add(self.depthField, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(self.depth_hbox, 0, wx.BOTTOM | wx.LEFT | wx.RIGHT | wx.EXPAND, 10)
-        vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         # Machine STL
         vbox.Add(self.machineModelLabel, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 10)
@@ -99,7 +103,7 @@ class MachineSettingsDialog(wx.Dialog):
         hbox.AddStretchSpacer()
         hbox.Add(self.machineModelField, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 10)
-        vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.defaultButton, 0, wx.ALL ^ wx.RIGHT, 10)
@@ -168,7 +172,7 @@ class MachineSettingsDialog(wx.Dialog):
         self.SetSizerAndFit(vbox)
 
     def onMachineModelButton(self, event):
-        dlg = wx.FileDialog(
+        dlg = ColoredFileDialog(
             self, message=_("Select binary file to load"),
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         dlg.SetWildcard("Model files (*.stl)|*.stl")

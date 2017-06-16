@@ -11,16 +11,17 @@ from collections import OrderedDict
 
 from horus.gui.engine import driver
 from horus.gui.util.custom_panels import ExpandableCollection
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredScrolledPanel
 
 
-class Workbench(wx.Panel):
+class Workbench(ColoredPanel):
 
     def __init__(self, parent, name='Workbench'):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
         self.name = name
 
         # Elements
-        self.scroll_panel = wx.lib.scrolledpanel.ScrolledPanel(self, size=(-1, -1))
+        self.scroll_panel = ColoredScrolledPanel(self, size=(-1, -1))
         self.scroll_panel.SetupScrolling(scroll_x=False, scrollIntoView=False)
         self.scroll_panel.SetAutoLayout(1)
         self.panels_collection = ExpandableCollection(self.scroll_panel)

@@ -73,4 +73,5 @@ def get_language_options():
         ['de', u'Deutsch'],
         ['it', u'Italiano'],
         ['pt', u'Português'],
+        ['ru', u'Russian'],
     ]

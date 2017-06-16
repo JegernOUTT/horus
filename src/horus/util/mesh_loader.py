@@ -10,6 +10,7 @@ import os
 
 from horus.util.mesh_loaders import ply
 from horus.util.mesh_loaders import stl
+from horus.util.model import ModelType
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def load_supported_extensions():
 
 def save_supported_extensions():
     """ return a list of supported file extensions for saving. """
-    return ['.ply']
+    return ['.ply', '.stl']
 
 
 def load_mesh(filename):
@@ -43,8 +44,6 @@ def save_mesh(filename, _object):
     Save a object into the file given by the filename.
     Use the filename extension to find out the file format.
     """
-    ext = os.path.splitext(filename)[1].lower()
-    if ext == '.ply':
-        ply.save_scene(filename, _object)
-        return
-    logger.error('Error: Unknown model extension: %s' % (ext))
+    ply.save_scene('{}.ply'.format(filename), _object)
+    if _object.model_type() == ModelType.Mesh:
+        stl.save_scene('{}.stl'.format(filename), _object)

@@ -20,12 +20,13 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 
 from horus.gui.workbench.calibration.pages.page import Page
 from horus.gui.workbench.calibration.pages.video_page import VideoPage
+from horus.gui.colored.colored_elements import ColoredPanel, ColoredMessageDialog
 
 
-class PlatformExtrinsicsPages(wx.Panel):
+class PlatformExtrinsicsPages(ColoredPanel):
 
     def __init__(self, parent, start_callback=None, exit_callback=None):
-        wx.Panel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
+        ColoredPanel.__init__(self, parent)  # , style=wx.RAISED_BORDER)
 
         self.start_callback = start_callback
         self.exit_callback = exit_callback
@@ -149,7 +150,7 @@ class ResultPage(Page):
             self.plot_panel.add(result)
             self.plot_panel.Show()
             self.Layout()
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self, _("Platform calibrated correctly"),
                 _("Success"), wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
@@ -157,7 +158,7 @@ class ResultPage(Page):
             self.Layout()
         else:
             if isinstance(result, PlatformExtrinsicsError):
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _("Platform extrinsics calibration has failed. "
                             "Please check the pattern and try again. "
                             "Also you can set up the calibration's capture settings "
@@ -168,10 +169,10 @@ class ResultPage(Page):
                 dlg.Destroy()
 
 
-class PlatformExtrinsics3DPlot(wx.Panel):
+class PlatformExtrinsics3DPlot(ColoredPanel):
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        ColoredPanel.__init__(self, parent)
 
         self.initialize()
 

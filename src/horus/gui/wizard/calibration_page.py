@@ -15,6 +15,7 @@ from horus.gui.engine import driver, calibration_data, image_capture, \
 from horus.gui.util.image_view import ImageView
 from horus.gui.util.pattern_distance_window import PatternDistanceWindow
 from horus.gui.wizard.wizard_page import WizardPage
+from horus.gui.colored.colored_elements import ColoredStaticText, ColoredButton, ColoredGauge, ColoredMessageDialog
 
 
 class CalibrationPage(WizardPage):
@@ -27,15 +28,15 @@ class CalibrationPage(WizardPage):
 
         self.parent = parent
 
-        self.pattern_label = wx.StaticText(self.panel, label=_(
+        self.pattern_label = ColoredStaticText(self.panel, label=_(
             "Put the pattern on the platform as shown in the picture and press \"Calibrate\""))
         self.pattern_label.Wrap(400)
         self.image_view = ImageView(self.panel, quality=wx.IMAGE_QUALITY_HIGH)
         self.image_view.set_image(wx.Image(resources.get_path_for_image("pattern-position.png")))
-        self.calibrate_button = wx.Button(self.panel, label=_("Calibrate"))
-        self.cancel_button = wx.Button(self.panel, label=_("Cancel"))
-        self.gauge = wx.Gauge(self.panel, range=100, size=(-1, 30))
-        self.result_label = wx.StaticText(self.panel, size=(-1, 30))
+        self.calibrate_button = ColoredButton(self.panel, label=_("Calibrate"))
+        self.cancel_button = ColoredButton(self.panel, label=_("Cancel"))
+        self.gauge = ColoredGauge(self.panel, range=100, size=(-1, 30))
+        self.result_label = ColoredStaticText(self.panel, size=(-1, 30))
 
         self.cancel_button.Disable()
         self.result_label.Hide()
@@ -149,7 +150,7 @@ class CalibrationPage(WizardPage):
             if isinstance(result, ComboCalibrationError):
                 self.result_label.SetLabel(
                     _("Check the pattern and the lasers and try again"))
-                dlg = wx.MessageDialog(
+                dlg = ColoredMessageDialog(
                     self, _("Scanner calibration has failed. "
                             "Please check the pattern and the lasers and try again. "
                             "Also you can set up the calibration's settings "
@@ -167,7 +168,7 @@ class CalibrationPage(WizardPage):
             self.skip_button.Disable()
             self.next_button.Enable()
             self.result_label.SetLabel(_("Success. Please press \"Next\" to continue"))
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self, _("Scanner calibrated correctly"),
                 _("Success"), wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()

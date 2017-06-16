@@ -19,6 +19,8 @@ from OpenGL.GLU import *
 from OpenGL.GL import *
 
 from horus.util import profile, mesh_loader, model, system as sys
+from horus.util.model import ModelType
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredMessageDialog, ColoredTextCtrl
 from horus.gui.util import opengl_helpers, opengl_gui
 
 
@@ -100,7 +102,8 @@ class SceneView(opengl_gui.glGuiPanel):
 
     def create_default_object(self):
         self._clear_scene()
-        self._object = model.Model(None, is_point_cloud=True)
+        self._object = model.Model(None)
+        self._object.set_model_type(ModelType.PointCloud)
         self._object._add_mesh()
         self._object._mesh._prepare_vertex_count(4000000)
 
@@ -310,7 +313,7 @@ class SceneView(opengl_gui.glGuiPanel):
 
     def on_delete_object(self, event):
         if self._object is not None:
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self, _("Your current model will be deleted.\nAre you sure you want to delete it?"),
                 _("Clear point cloud"), wx.YES_NO | wx.ICON_QUESTION)
             result = dlg.ShowModal() == wx.ID_YES
@@ -409,10 +412,16 @@ class SceneView(opengl_gui.glGuiPanel):
         glLoadIdentity()
 
         glBegin(GL_QUADS)
-        glColor3f(0.6, 0.6, 0.6)
+        glColor3f(0.133, 0.161, 0.2)
         glVertex3f(-1, -1, -1)
         glVertex3f(1, -1, -1)
-        glColor3f(0, 0, 0)
+        glColor3f(0.204, 0.247, 0.314)
+
+        # glColor3f(0.6, 0.6, 0.6)
+        # glVertex3f(-1, -1, -1)
+        # glVertex3f(1, -1, -1)
+        # glColor3f(0, 0, 0)
+
         glVertex3f(1, 1, -1)
         glVertex3f(-1, 1, -1)
         glEnd()
@@ -545,7 +554,8 @@ class SceneView(opengl_gui.glGuiPanel):
 
         if self._object is not None:
 
-            if self._object.is_point_cloud() and opengl_helpers.has_shader_support():
+            if self._object.model_type() == ModelType.PointCloud\
+                    and opengl_helpers.has_shader_support():
                 self._object_shader_no_light.bind()
             else:
                 self._object_shader.bind()
@@ -560,7 +570,7 @@ class SceneView(opengl_gui.glGuiPanel):
             glEnable(GL_DEPTH_TEST)
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 
-            if self._object.is_point_cloud() and opengl_helpers.has_shader_support():
+            if self._object.model_type() == ModelType.PointCloud and opengl_helpers.has_shader_support():
                 self._object_shader_no_light.unbind()
             else:
                 self._object_shader.unbind()
@@ -579,7 +589,7 @@ class SceneView(opengl_gui.glGuiPanel):
 
         glMultMatrixf(opengl_helpers.convert_3x3_matrix_to_4x4(obj.get_matrix()))
 
-        if obj.is_point_cloud():
+        if obj.model_type() == ModelType.PointCloud:
             if obj._mesh is not None:
                 if obj._mesh.vbo is None or obj._mesh.vertex_count > obj._mesh.vbo._size:
                     if obj._mesh.vbo is not None:
@@ -711,7 +721,7 @@ class SceneView(opengl_gui.glGuiPanel):
 # TODO: Remove this or put it in a seperate file
 
 
-class ShaderEditor(wx.Dialog):
+class ShaderEditor(ColoredDialog):
 
     def __init__(self, parent, callback, v, f):
         super(ShaderEditor, self).__init__(
@@ -719,8 +729,8 @@ class ShaderEditor(wx.Dialog):
         self._callback = callback
         s = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(s)
-        self._vertex = wx.TextCtrl(self, -1, v, style=wx.TE_MULTILINE)
-        self._fragment = wx.TextCtrl(self, -1, f, style=wx.TE_MULTILINE)
+        self._vertex = ColoredTextCtrl(self, -1, v, style=wx.TE_MULTILINE)
+        self._fragment = ColoredTextCtrl(self, -1, f, style=wx.TE_MULTILINE)
         s.Add(self._vertex, 1, flag=wx.EXPAND)
         s.Add(self._fragment, 1, flag=wx.EXPAND)
 

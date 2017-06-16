@@ -12,6 +12,7 @@ from horus.util import profile
 from horus.gui.engine import driver, ciclop_scan, point_cloud_roi
 from horus.gui.util.custom_panels import ExpandablePanel, Slider, CheckBox, ComboBox, \
     Button, FloatTextBox
+from horus.gui.colored.colored_elements import ColoredColourDialog
 
 
 class ScanParameters(ExpandablePanel):
@@ -136,7 +137,7 @@ class PointCloudColor(ExpandablePanel):
     def on_color_picker(self):
         data = wx.ColourData()
         data.SetColour(ciclop_scan.color)
-        dialog = wx.ColourDialog(self, data)
+        dialog = ColoredColourDialog(self, data)
         dialog.GetColourData().SetChooseFull(True)
         if dialog.ShowModal() == wx.ID_OK:
             data = dialog.GetColourData()

@@ -12,6 +12,7 @@ from horus.gui.wizard.wizard_page import WizardPage
 from horus.util import profile
 
 from horus.gui.engine import driver, ciclop_scan, image_capture
+from horus.gui.colored.colored_elements import ColoredStaticText, ColoredComboBox, ColoredCheckBox
 
 
 class ScanningPage(WizardPage):
@@ -29,30 +30,30 @@ class ScanningPage(WizardPage):
             value = _("Medium")
         else:
             value = _("High")
-        self.resolution_label = wx.StaticText(self.panel, label=_("Resolution"))
+        self.resolution_label = ColoredStaticText(self.panel, label=_("Resolution"))
         self.resolution_label.SetToolTip(wx.ToolTip(_(u"Set the motor step. High (0.45º),"
                                                       u" Medium (0.9º), Low (1.8º)")))
-        self.resolution_combo_box = wx.ComboBox(self.panel, wx.ID_ANY,
-                                                size=(200, -1),
-                                                value=value,
-                                                choices=[_("High"), _("Medium"), _("Low")],
-                                                style=wx.CB_READONLY)
+        self.resolution_combo_box = ColoredComboBox(self.panel, wx.ID_ANY,
+                                                    size=(200, -1),
+                                                    value=value,
+                                                    choices=[_("High"), _("Medium"), _("Low")],
+                                                    style=wx.CB_READONLY)
 
         _choices = []
         choices = profile.settings.get_possible_values('use_laser')
         for i in choices:
             _choices.append(_(i))
         self.laser_dict = dict(zip(_choices, choices))
-        self.laser_label = wx.StaticText(self.panel, label=_("Use laser"))
-        self.laser_combo_box = wx.ComboBox(self.panel, wx.ID_ANY,
-                                           size=(200, -1),
-                                           value=_(profile.settings['use_laser']),
-                                           choices=_choices,
-                                           style=wx.CB_READONLY)
+        self.laser_label = ColoredStaticText(self.panel, label=_("Use laser"))
+        self.laser_combo_box = ColoredComboBox(self.panel, wx.ID_ANY,
+                                               size=(200, -1),
+                                               value=_(profile.settings['use_laser']),
+                                               choices=_choices,
+                                               style=wx.CB_READONLY)
 
-        self.capture_texture_label = wx.StaticText(self.panel, label=_("Capture texture"))
-        self.capture_texture_checkbox = wx.CheckBox(self.panel,
-                                                    size=(200, -1))
+        self.capture_texture_label = ColoredStaticText(self.panel, label=_("Capture texture"))
+        self.capture_texture_checkbox = ColoredCheckBox(self.panel,
+                                                        size=(200, -1))
         self.capture_texture_checkbox.SetValue(profile.settings['capture_texture'])
 
         self.skip_button.Hide()

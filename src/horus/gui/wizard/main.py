@@ -14,9 +14,10 @@ from horus.gui.engine import driver
 from horus.gui.wizard.connection_page import ConnectionPage
 from horus.gui.wizard.calibration_page import CalibrationPage
 from horus.gui.wizard.scanning_page import ScanningPage
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredMessageDialog
 
 
-class Wizard(wx.Dialog):
+class Wizard(ColoredDialog):
 
     def __init__(self, parent):
         if sys.is_windows():
@@ -91,7 +92,7 @@ class Wizard(wx.Dialog):
     def on_exit(self, message=True):
         result = True
         if message:
-            dlg = wx.MessageDialog(
+            dlg = ColoredMessageDialog(
                 self, _("Do you really want to exit?"),
                 _("Exit wizard"), wx.YES_NO | wx.ICON_INFORMATION)
             result = dlg.ShowModal() == wx.ID_YES
@@ -148,7 +149,7 @@ class Wizard(wx.Dialog):
     def on_scanning_page_next_clicked(self):
         driver.board.lasers_off()
         profile.settings.save_settings()
-        dlg = wx.MessageDialog(
+        dlg = ColoredMessageDialog(
             self,
             _("You have completed the wizard.\nPress Play button to start scanning."),
             _("Ready to scan!"), wx.OK | wx.ICON_INFORMATION)

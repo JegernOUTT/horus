@@ -13,74 +13,77 @@ from horus.gui.engine import driver
 from horus.util import profile, resources
 from horus.util.avr_helpers import AvrDude, AvrError
 
+from horus.gui.colored.colored_elements import ColoredDialog, ColoredStaticText, ColoredComboBox, ColoredCheckBox, \
+    ColoredButton, ColoredGauge, ColoredStaticLine, ColoredFileDialog, ColoredMessageDialog
+
 import logging
 logger = logging.getLogger(__name__)
 
 
-class PreferencesDialog(wx.Dialog):
+class PreferencesDialog(ColoredDialog):
 
     def __init__(self, basic=False):
-        wx.Dialog.__init__(self, None, title=_("Preferences"))
+        ColoredDialog.__init__(self, None, title=_("Preferences"))
 
         self.hex_path = None
         self.basic = basic
 
         # Elements
-        self.camera_id_label = wx.StaticText(self, label=_("Camera ID"))
+        self.camera_id_label = ColoredStaticText(self, label=_("Camera ID"))
         self.camera_id_names = driver.camera.get_video_list()
-        self.camera_id_combo = wx.ComboBox(
+        self.camera_id_combo = ColoredComboBox(
             self, choices=self.camera_id_names, size=(170, -1), style=wx.CB_READONLY)
 
-        self.serial_name_label = wx.StaticText(self, label=_("Serial name"))
+        self.serial_name_label = ColoredStaticText(self, label=_("Serial name"))
         self.serial_names = driver.board.get_serial_list()
-        self.serial_name_combo = wx.ComboBox(self, choices=self.serial_names, size=(170, -1))
+        self.serial_name_combo = ColoredComboBox(self, choices=self.serial_names, size=(170, -1))
 
         self.luminosity_values = []
         values = profile.settings.get_possible_values('luminosity')
         for value in values:
             self.luminosity_values.append(_(value))
         self.luminosity_dict = dict(zip(self.luminosity_values, values))
-        self.luminosity_label = wx.StaticText(self, label=_("Luminosity"))
+        self.luminosity_label = ColoredStaticText(self, label=_("Luminosity"))
         self.luminosity_label.SetToolTip(wx.ToolTip(
             _("Change the luminosity until colored lines appear "
               "over the chess pattern in the video")))
-        self.luminosity_combo = wx.ComboBox(self, wx.ID_ANY,
+        self.luminosity_combo = ColoredComboBox(self, wx.ID_ANY,
                                             choices=self.luminosity_values,
                                             size=(170, -1), style=wx.CB_READONLY)
 
-        self.invert_motor_label = wx.StaticText(self, label=_("Invert the motor direction"))
-        self.invert_motor_check_box = wx.CheckBox(self)
+        self.invert_motor_label = ColoredStaticText(self, label=_("Invert the motor direction"))
+        self.invert_motor_check_box = ColoredCheckBox(self)
 
         if not self.basic:
-            self.baud_rate_label = wx.StaticText(self, label=_("Baud rate"))
+            self.baud_rate_label = ColoredStaticText(self, label=_("Baud rate"))
             self.baud_rates = [str(b) for b in profile.settings.get_possible_values('baud_rate')]
-            self.baud_rate_combo = wx.ComboBox(
+            self.baud_rate_combo = ColoredComboBox(
                 self, choices=self.baud_rates, size=(170, -1), style=wx.CB_READONLY)
 
-            self.board_label = wx.StaticText(self, label=_("AVR board"))
+            self.board_label = ColoredStaticText(self, label=_("AVR board"))
             self.boards = profile.settings.get_possible_values('board')
-            self.boards_combo = wx.ComboBox(
+            self.boards_combo = ColoredComboBox(
                 self, choices=self.boards, size=(170, -1), style=wx.CB_READONLY)
 
-            self.hex_label = wx.StaticText(self, label=_("Binary file"))
-            self.hex_combo = wx.ComboBox(
+            self.hex_label = ColoredStaticText(self, label=_("Binary file"))
+            self.hex_combo = ColoredComboBox(
                 self, choices=[_("Default"), _("External file...")],
                 value=_("Default"), size=(170, -1), style=wx.CB_READONLY)
-            self.clear_check_box = wx.CheckBox(self, label=_("Clear EEPROM"))
-            self.upload_firmware_button = wx.Button(self, label=_("Upload firmware"))
-            self.gauge = wx.Gauge(self, range=100, size=(180, -1))
+            self.clear_check_box = ColoredCheckBox(self, label=_("Clear EEPROM"))
+            self.upload_firmware_button = ColoredButton(self, label=_("Upload firmware"))
+            self.gauge = ColoredGauge(self, range=100, size=(180, -1))
             self.gauge.Hide()
 
             self.enable_firmware_section(not driver.is_connected)
 
-            self.language_label = wx.StaticText(self, label=_("Language"))
+            self.language_label = ColoredStaticText(self, label=_("Language"))
             self.languages = [row[1] for row in resources.get_language_options()]
-            self.language_combo = wx.ComboBox(self, choices=self.languages,
+            self.language_combo = ColoredComboBox(self, choices=self.languages,
                                               value=profile.settings['language'],
                                               size=(170, -1), style = wx.CB_READONLY)
 
-        self.cancel_button = wx.Button(self, label=_("Cancel"), size=(110, -1))
-        self.save_button = wx.Button(self, label=_("Save"), size=(110, -1))
+        self.cancel_button = ColoredButton(self, label=_("Cancel"), size=(110, -1))
+        self.save_button = ColoredButton(self, label=_("Save"), size=(110, -1))
 
         # Fill data
         current_video_id = profile.settings['camera_id']
@@ -118,12 +121,12 @@ class PreferencesDialog(wx.Dialog):
         if not self.basic:
             self._add_label_control(vbox, self.baud_rate_label, self.baud_rate_combo)
 
-        vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         self._add_label_control(vbox, self.luminosity_label, self.luminosity_combo)
         self._add_label_control(vbox, self.invert_motor_label, self.invert_motor_check_box)
 
-        vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         if not self.basic:
             self._add_label_control(vbox, self.board_label, self.boards_combo)
@@ -137,11 +140,11 @@ class PreferencesDialog(wx.Dialog):
 
             vbox.Add(self.gauge, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 10)
 
-            vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
+            vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
 
             self._add_label_control(vbox, self.language_label, self.language_combo)
 
-            vbox.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
+            vbox.Add(ColoredStaticLine(self), 0, wx.EXPAND | wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.cancel_button, 0, wx.ALL ^ wx.RIGHT, 10)
@@ -174,7 +177,7 @@ class PreferencesDialog(wx.Dialog):
         if value == _("Default"):
             self.hex_path = None
         elif value == _("External file..."):
-            dlg = wx.FileDialog(
+            dlg = ColoredFileDialog(
                 self, _("Select binary file to load"), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
             dlg.SetWildcard("hex files (*.hex)|*.hex")
             if dlg.ShowModal() == wx.ID_OK:
@@ -220,14 +223,14 @@ class PreferencesDialog(wx.Dialog):
             wx.CallAfter(self.gauge.SetValue, self.count)
 
     def avr_error_message(self):
-        dlg = wx.MessageDialog(
+        dlg = ColoredMessageDialog(
             self, _("Avrdude is not installed. Please, install it on your system"),
             _('Avrdude not installed'), wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
         dlg.Destroy()
 
     def wrong_board_message(self):
-        dlg = wx.MessageDialog(
+        dlg = ColoredMessageDialog(
             self, _("Probably you have selected the wrong board. Select another board"),
             _('Wrong board'), wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()

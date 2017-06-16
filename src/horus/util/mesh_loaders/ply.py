@@ -21,31 +21,54 @@ import numpy as np
 
 from horus import __version__
 from horus.util import model
+from horus.util.model import ModelType
+
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-def _load_ascii(mesh, stream, dtype, count):
+def _load_ascii(mesh, stream, dtype, count, tri_count):
     fields = dtype.fields
 
     v = 0
     c = 0
 
     if 'c' in fields:
+        mesh.has_colors = True
         c += 3
     if 'n' in fields:
+        mesh.has_normals = True
         c += 3
 
     i = 0
+    vertexes = []
     while i < count:
         i += 1
         data = stream.readline().split(' ')
         if data is not None:
+            vertexes.append([float(data[v]), float(data[v + 1]), float(data[v + 2])])
             mesh._add_vertex(data[v], data[v + 1], data[v + 2], data[c], data[c + 1], data[c + 2])
 
+    i = 0
+    if tri_count > 0:
+        triangles_indexes = []
+        while i < tri_count:
+            i += 1
+            data = stream.readline().split(' ')
+            triangles_indexes.append([int(data[1]), int(data[2]), int(data[3])])
+        triangles_indexes = np.array(triangles_indexes)
 
-def _load_binary(mesh, stream, dtype, count):
+        # Reconstruct vertexes via triangles order and set object not_point_cloud
+        mesh._prepare_face_count(tri_count)
+        for index in triangles_indexes:
+            mesh._add_face(vertexes[index[0]][0], vertexes[index[0]][1], vertexes[index[0]][2],
+                           vertexes[index[1]][0], vertexes[index[1]][1], vertexes[index[1]][2],
+                           vertexes[index[2]][0], vertexes[index[2]][1], vertexes[index[2]][2])
+    return not tri_count > 0
+
+
+def _load_binary(mesh, stream, dtype, count, tri_count, fm):
     data = np.fromfile(stream, dtype=dtype, count=count)
 
     fields = dtype.fields
@@ -58,21 +81,39 @@ def _load_binary(mesh, stream, dtype, count):
 
     if 'n' in fields:
         mesh.normal = data['n']
+        mesh.has_normals = True
     else:
         mesh.normal = np.zeros((count, 3))
 
     if 'c' in fields:
         mesh.colors = data['c']
+        mesh.has_colors = True
     else:
         mesh.colors = 255 * np.ones((count, 3))
 
+    if tri_count > 0:
+        tri_data = np.fromfile(stream,
+                               dtype=[('tr', '{0}u1, {0}i4, {0}i4, {0}i4'.format(fm), (1,))],
+                               count=tri_count)
+        triangles_indexes = tri_data['tr'][['f1', 'f2', 'f3']].view((fm + 'i4', 3)).reshape(tri_count, 3)
+
+        # Reconstruct vertexes via triangles order and set object not_point_cloud
+        vertexes = mesh.vertexes
+        mesh._prepare_face_count(tri_count)
+        for index in triangles_indexes:
+            mesh._add_face(vertexes[index[0]][0], vertexes[index[0]][1], vertexes[index[0]][2],
+                           vertexes[index[1]][0], vertexes[index[1]][1], vertexes[index[1]][2],
+                           vertexes[index[2]][0], vertexes[index[2]][1], vertexes[index[2]][2])
+    return not tri_count > 0
+
 
 def load_scene(filename):
-    obj = model.Model(filename, is_point_cloud=True)
+    obj = model.Model(filename)
     m = obj._add_mesh()
     with open(filename, "rb") as f:
         dtype = []
         count = 0
+        tri_count = 0
         format = None
         line = None
         header = ''
@@ -80,8 +121,7 @@ def load_scene(filename):
         while line != 'end_header\n' and line != '':
             line = f.readline()
             header += line
-        # Discart faces
-        header = header.split('element face ')[0].split('\n')
+        header = header.split('\n')
 
         if header[0] == 'ply':
 
@@ -109,15 +149,20 @@ def load_scene(filename):
                     props = line.split(' ')
                     if props[2] in dt.keys():
                         dtype = dtype + [(dt[props[2]], df[props[1]], (ds[props[2]],))]
+                elif 'element face ' in line:
+                    tri_count = int(line.split('element face ')[1])
 
             dtype = np.dtype(dtype)
 
+            is_point_cloud = True
             if format is not None:
                 if format == 'ascii':
                     m._prepare_vertex_count(count)
-                    _load_ascii(m, f, dtype, count)
+                    is_point_cloud = _load_ascii(m, f, dtype, count, tri_count)
                 elif format == 'binary_big_endian' or format == 'binary_little_endian':
-                    _load_binary(m, f, dtype, count)
+                    is_point_cloud = _load_binary(m, f, dtype, count, tri_count, fm)
+
+            obj.set_model_type(ModelType.PointCloud if is_point_cloud else ModelType.Mesh)
             obj._post_process_after_load()
             return obj
 
@@ -134,34 +179,58 @@ def save_scene(filename, _object):
 def save_scene_stream(stream, _object):
     m = _object._mesh
 
-    binary = True
-
     if m is not None:
+        pack_type = '<fff'
         frame = "ply\n"
-        if binary:
-            frame += "format binary_little_endian 1.0\n"
-        else:
-            frame += "format ascii 1.0\n"
+        frame += "format binary_little_endian 1.0\n"
         frame += "comment Generated by Horus {0}\n".format(__version__)
         frame += "element vertex {0}\n".format(m.vertex_count)
         frame += "property float x\n"
         frame += "property float y\n"
         frame += "property float z\n"
-        frame += "property uchar red\n"
-        frame += "property uchar green\n"
-        frame += "property uchar blue\n"
-        frame += "element face 0\n"
-        frame += "property list uchar int vertex_indices\n"
+        if m.has_colors:
+            frame += "property uchar red\n"
+            frame += "property uchar green\n"
+            frame += "property uchar blue\n"
+            pack_type += 'BBB'
+        if m.has_normals:
+            frame += "property float nx\n"
+            frame += "property float ny\n"
+            frame += "property float nz\n"
+            pack_type += 'fff'
+        frame += "element face {0}\n".format(m.vertex_count // 3 if _object.model_type() == ModelType.Mesh else 0)
+        if _object.model_type() == ModelType.Mesh:
+            frame += "property list uchar int vertex_indices\n"
         frame += "end_header\n"
         stream.write(frame)
-        if m.vertex_count > 0:
-            if binary:
-                for i in xrange(m.vertex_count):
-                    stream.write(struct.pack("<fffBBB",
-                                             m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
-                                             m.colors[i, 0], m.colors[i, 1], m.colors[i, 2]))
-            else:
-                for i in xrange(m.vertex_count):
-                    stream.write("{0} {1} {2} {3} {4} {5}\n".format(
-                                 m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
-                                 m.colors[i, 0], m.colors[i, 1], m.colors[i, 2]))
+
+        if m.has_colors and not m.has_normals:
+            for i in xrange(m.vertex_count):
+                packed = struct.pack(pack_type,
+                                     m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
+                                     m.colors[i, 0], m.colors[i, 1], m.colors[i, 2])
+                stream.write(packed)
+        elif m.has_colors and m.has_normals:
+            for i in xrange(m.vertex_count):
+                packed = struct.pack(pack_type,
+                                     m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
+                                     m.colors[i, 0], m.colors[i, 1], m.colors[i, 2],
+                                     m.normal[i, 0], m.normal[i, 1], m.normal[i, 2])
+                stream.write(packed)
+        elif not m.has_colors and m.has_normals:
+            for i in xrange(m.vertex_count):
+                packed = struct.pack(pack_type,
+                                     m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
+                                     m.normal[i, 0], m.normal[i, 1], m.normal[i, 2])
+                stream.write(packed)
+        else:
+            for i in xrange(m.vertex_count):
+                packed = struct.pack(pack_type,
+                                     m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2])
+                stream.write(packed)
+
+        if _object.model_type() == ModelType.Mesh:
+            i = 0
+            while i < m.vertex_count:
+                stream.write(struct.pack("<Biii", 3, i, i + 1, i + 2))
+                i += 3

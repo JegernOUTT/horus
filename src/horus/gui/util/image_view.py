@@ -8,13 +8,14 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 import wx._core
 
 from horus.util import resources
+from horus.gui.colored.colored_elements import ColoredPanel
 
 
-class ImageView(wx.Panel):
+class ImageView(ColoredPanel):
 
     def __init__(self, parent, resize=True, quality=wx.IMAGE_QUALITY_NORMAL,
                  size=(-1, -1), black=False, style=wx.NO_BORDER):
-        wx.Panel.__init__(self, parent, size=size, style=style)
+        ColoredPanel.__init__(self, parent, size=size, style=style)
 
         self.x_offset = 0
         self.y_offset = 0

@@ -24,10 +24,10 @@ class HorusApp(wx.App):
 
         self.splash = None
 
-        if sys.is_darwin():
-            self.after_splash_callback()
-        else:
-            self.splash = SplashScreen(self.after_splash_callback)
+        # if sys.is_darwin():
+        #     self.after_splash_callback()
+        # else:
+        self.splash = SplashScreen(self.after_splash_callback)
 
     def after_splash_callback(self):
         # Load settings
@@ -45,6 +45,10 @@ class HorusApp(wx.App):
 
         # Create main window
         self.main_window = MainWindow()
+
+        self.main_window.SetThemeEnabled(False)
+        self.main_window.SetBackgroundColour('#3a465a')
+        self.main_window.SetForegroundColour('#3a465a')
 
         # Check for updates
         if profile.settings['check_for_updates'] and version.check_for_updates():

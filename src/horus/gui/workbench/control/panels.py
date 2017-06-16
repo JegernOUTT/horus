@@ -12,6 +12,7 @@ from horus.util import profile, system as sys
 from horus.gui.engine import driver
 from horus.gui.util.custom_panels import ExpandablePanel, ControlPanel, Slider, \
     ToggleButton, Button, CallbackButton, FloatTextBox
+from horus.gui.colored.colored_elements import ColoredFileDialog, ColoredButton, ColoredStaticText, ColoredTextCtrl
 
 
 class CameraControl(ExpandablePanel):
@@ -53,7 +54,7 @@ class CameraControl(ExpandablePanel):
 
     def _save_image(self):
         image = driver.camera.capture_image()
-        dlg = wx.FileDialog(self, _("Save image"), style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        dlg = ColoredFileDialog(self, _("Save image"), style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         wildcard_list = ';'.join(map(lambda s: '*' + s, ['.png']))
         wildcard_filter = "Image files (%s)|%s;%s" % (wildcard_list, wildcard_list,
                                                       wildcard_list.upper())
@@ -113,10 +114,10 @@ class LDRSection(ControlPanel):
         # Elements
         self.ldr_buttons = []
         self.ldr_labels = []
-        self.ldr_buttons += [wx.Button(self, label='LDR 0', size=(140, -1))]
-        self.ldr_buttons += [wx.Button(self, label='LDR 1', size=(140, -1))]
-        self.ldr_labels += [wx.StaticText(self, label='0')]
-        self.ldr_labels += [wx.StaticText(self, label='0')]
+        self.ldr_buttons += [ColoredButton(self, label='LDR 0', size=(140, -1))]
+        self.ldr_buttons += [ColoredButton(self, label='LDR 1', size=(140, -1))]
+        self.ldr_labels += [ColoredStaticText(self, label='0')]
+        self.ldr_labels += [ColoredStaticText(self, label='0')]
 
         # Layout
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -209,9 +210,9 @@ class GcodeSection(ControlPanel):
         ControlPanel.__init__(self, parent, name, engine_callback)
 
         # Elements
-        self.request = wx.TextCtrl(self)
-        self.control = wx.Button(self, label=_(self.setting._label), size=(-1, -1))
-        self.response = wx.TextCtrl(self, size=(-1, 275), style=wx.TE_MULTILINE)
+        self.request = ColoredTextCtrl(self)
+        self.control = ColoredButton(self, label=_(self.setting._label), size=(-1, -1))
+        self.response = ColoredTextCtrl(self, size=(-1, 275), style=wx.TE_MULTILINE)
 
         # Layout
         vbox = wx.BoxSizer(wx.VERTICAL)
